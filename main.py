@@ -1,11 +1,16 @@
-from typing import Optional, List
-from fastapi import FastAPI, Path, Query
-from pydantic import BaseModel
+from fastapi import FastAPI
+import api.users as users, courses, sections
+
+from db.db_setup import engine
+from db.models import user
+
+# bind all the models to the engine
+user.Base.metadata.create_all(bind=engine) 
 
 app = FastAPI(
     title="LMS to Learn FastAPI",
     description="Just a sample LMS",
-    version="0.0.1",
+    version="0.0.2",
     contact={
         "name": "Talha",
         "email": "samplemail@mail.com",
@@ -16,31 +21,4 @@ app = FastAPI(
     },
 )
 
-users = []
-
-class User(BaseModel):
-    email: str
-    is_active: bool
-    bio: Optional[str]
-
-
-@app.get("/users", response_model=List[User])
-async def get_users():
-    return users
-
-
-
-# In the post request we can define path parameters like that: app.post("/users")
-
-@app.post("/users")
-async def create_user(user: User):
-    users.append(user)
-    return "Saved"
-
-
-@app.get("/users/{id}")
-async def get_user(
-    id: int = Path(..., description="The ID of the user"),  # ... means it's required. Called epllepsis (Something like that)
-    q: str = Query(None, max_length=5)    # None means optional parameter
-):      
-    return {"user" : users[id], "q": q}
+app.include_router(users.router)
